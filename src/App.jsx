@@ -1,994 +1,1671 @@
-import { useState, useEffect, useRef } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeLedger — Where Real Traders Build Reputation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-const G = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:#fff;font-family:'Inter',sans-serif;color:#111;-webkit-font-smoothing:antialiased}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px}
-@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.fu{animation:fu .45s ease both}
-.d1{animation-delay:.07s}.d2{animation-delay:.14s}.d3{animation-delay:.22s}.d4{animation-delay:.3s}
-`;
+  :root {
+    --bg: #F4EFE6;
+    --bg-card: #FDFAF5;
+    --bg-dark: #1C1814;
+    --text-primary: #1C1814;
+    --text-secondary: #6B6258;
+    --text-tertiary: #9C938A;
+    --border: rgba(28, 24, 20, 0.10);
+    --border-md: rgba(28, 24, 20, 0.16);
+    --accent-green: #3D6B4A;
+    --accent-green-light: #EAF2ED;
+    --accent-amber: #8B6914;
+    --accent-amber-light: #F5EDDB;
+    --accent-red: #8B2E2E;
+    --accent-red-light: #F5E8E8;
+    --accent-blue: #2D5580;
+    --accent-blue-light: #E8EFF7;
+    --gold: #9B7E3A;
+    --radius: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
 
-const C = {
-  bg:'#ffffff', alt:'#f6f6f6', border:'#e8e8e8', borderMd:'#d0d0d0',
-  text:'#111111', mid:'#555555', faint:'#999999',
-  accent:'#2563eb', ahov:'#1d4ed8', abg:'#eff6ff', abd:'#bfdbfe',
-  green:'#16a34a', gbg:'#f0fdf4', gbd:'#bbf7d0',
-  red:'#dc2626', rbg:'#fef2f2', rbd:'#fecaca',
-};
-const FF = {d:"'Inter',sans-serif", m:"'JetBrains Mono',monospace"};
+  html { scroll-behavior: smooth; }
 
-const TRADERS = [
-  {id:1,name:"Karim A.",handle:"karim_fx",  score:4.83,r:142,dd:29,win:67,t:184,tag:"FX",  subs:312,  ret:"+38%",streak:11},
-  {id:2,name:"Sarah M.",handle:"s_quant",   score:4.21,r:98, dd:23,win:71,t:127,tag:"Crypto",subs:241,ret:"+29%",streak:7},
-  {id:3,name:"Liu W.",  handle:"liuwei_tr", score:3.97,r:118,dd:29,win:58,t:312,tag:"FX",  subs:198,  ret:"+31%",streak:4},
-  {id:4,name:"Dani R.", handle:"danir_idx", score:3.74,r:76, dd:20,win:63,t:89, tag:"Index",subs:156,  ret:"+22%",streak:8},
-  {id:5,name:"Ola T.",  handle:"ola_swing", score:3.48,r:104,dd:29,win:55,t:241,tag:"FX",  subs:134,  ret:"+27%",streak:3},
-  {id:6,name:"Marc B.", handle:"marcb_vol", score:3.12,r:63, dd:20,win:74,t:68, tag:"Options",subs:98, ret:"+19%",streak:6},
-];
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
 
-const REVIEWS = [
-  {name:"Alex P.", role:"Subscriber · 4 months",text:"I was losing money on my own. First month copying Karim I made back 3x what I lost before. The Recovery Score actually tells you who's worth following."},
-  {name:"Maria T.", role:"Subscriber · 7 months",text:"The copy flow is simple — you see exactly what to execute. No Telegram chaos, no guessing position size. Finally a platform that treats me like an adult."},
-  {name:"James O.", role:"Subscriber · 2 months",text:"The fact that trade history can't be edited is what sold me. Every other platform lets traders cherry-pick their results. Here the record is permanent."},
-  {name:"Priya K.", role:"Subscriber · 5 months",text:"Set 1% risk per trade, followed two traders for 90 days. Up 18%. I didn't make a single decision myself. That's the point."},
-];
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(244, 239, 230, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .nav-logo span {
+    color: var(--gold);
+  }
+  .nav-links {
+    display: flex; align-items: center; gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-md);
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    transition: background 0.2s, border-color 0.2s !important;
+  }
+  .nav-cta:hover { background: var(--bg-card) !important; border-color: var(--text-primary) !important; }
 
-const FAQS = [
-  {q:"Do you execute trades automatically?",a:"No — and that's intentional. You receive the full signal (entry, SL, TP, position size) and execute manually in your broker. MT4, MT5, Binance — wherever you trade. You stay in full control."},
-  {q:"How do I know the stats are real?",a:"All trades are submitted via API before they close. Once recorded, nothing can be deleted or edited — not even by us. The Recovery Score reflects every trade, including the losses."},
-  {q:"What's a Recovery Score?",a:"Total R divided by Max Drawdown. R is a risk-normalised unit — +1R means a trader gained exactly what they risked. Recovery Score tells you how efficiently a trader generates returns relative to their worst losing period."},
-  {q:"What if I have no trading experience?",a:"That's who this is built for. You choose a trader, set your risk percentage (we recommend 1%), and follow each signal. The platform tells you exactly how large each position should be for your account size."},
-  {q:"Can I cancel anytime?",a:"Yes. Monthly billing. One click to cancel. No contracts, no cancellation fees."},
-  {q:"What's the minimum account size?",a:"There's no minimum on our side. Your broker may have their own requirements. Most signals work with accounts from $500 upwards."},
-];
+  /* CONTAINERS */
+  .container { max-width: 1160px; margin: 0 auto; padding: 0 2rem; }
+  .section { padding: 100px 0; }
+  .section-sm { padding: 72px 0; }
 
-const AVC = ['#6366f1','#0ea5e9','#f59e0b','#10b981','#f43f5e','#8b5cf6'];
+  /* SECTION LABELS */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 1px;
+    background: var(--text-tertiary);
+  }
 
-function Av({id,name,size=34,r=7}){
-  const i = name.split(' ').map(n=>n[0]).join('');
-  return(
-    <div style={{width:size,height:size,borderRadius:r,background:`${AVC[id%6]}15`,
-      border:`1px solid ${AVC[id%6]}30`,display:'flex',alignItems:'center',
-      justifyContent:'center',fontFamily:FF.m,fontSize:size*.28,fontWeight:600,
-      color:AVC[id%6],flexShrink:0}}>{i}</div>
-  );
-}
+  /* DIVIDERS */
+  .divider { height: 1px; background: var(--border); }
 
-function Badge({children,c=C.faint,bg=C.alt,bd=C.border}){
-  return <span style={{background:bg,border:`1px solid ${bd}`,color:c,borderRadius:4,
-    fontSize:11,fontFamily:FF.m,fontWeight:500,padding:'2px 7px',whiteSpace:'nowrap'}}>{children}</span>;
-}
+  /* ===================== HERO ===================== */
+  .hero {
+    padding: 180px 0 120px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 80px;
+    align-items: start;
+  }
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    width: 32px; height: 1px;
+    background: var(--gold);
+    display: inline-block;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 64px;
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero-sub {
+    font-size: 17px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 460px;
+    line-height: 1.75;
+    margin-bottom: 3rem;
+  }
+  .hero-sub strong { font-weight: 500; color: var(--text-primary); }
+  .hero-actions {
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+  .btn-primary {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--text-primary);
+    color: var(--bg);
+    border: 1px solid var(--text-primary);
+    padding: 13px 28px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--bg-dark); border-color: var(--bg-dark); }
+  .btn-ghost {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--text-primary); }
+  .btn-ghost-arrow { font-size: 16px; }
 
-function Btn({children,onClick,v='p',full,sz='md'}){
-  const [h,sH]=useState(false);
-  const pd = sz==='lg' ? '12px 28px' : sz==='sm' ? '7px 14px' : '9px 20px';
-  const fs = sz==='lg' ? 15 : sz==='sm' ? 12 : 13;
-  const base = {cursor:'pointer',borderRadius:6,fontWeight:600,fontFamily:FF.d,
-    padding:pd,fontSize:fs,transition:'all .12s',display:'inline-flex',
-    alignItems:'center',justifyContent:'center',width:full?'100%':'auto',border:'none'};
-  if(v==='p') return <button onClick={onClick} onMouseOver={()=>sH(true)} onMouseOut={()=>sH(false)}
-    style={{...base,background:h?C.ahov:C.accent,color:'#fff'}}>{children}</button>;
-  if(v==='s') return <button onClick={onClick} onMouseOver={()=>sH(true)} onMouseOut={()=>sH(false)}
-    style={{...base,background:'transparent',border:`1px solid ${h?C.borderMd:C.border}`,color:h?C.text:C.mid}}>{children}</button>;
-  return <button onClick={onClick} onMouseOver={()=>sH(true)} onMouseOut={()=>sH(false)}
-    style={{...base,background:h?C.abg:'transparent',border:`1px solid ${C.abd}`,color:C.accent}}>{children}</button>;
-}
+  /* Hero right panel — live feed preview */
+  .hero-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: sticky;
+    top: 80px;
+  }
+  .hero-panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .hero-panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .live-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent-green);
+    letter-spacing: 0.06em;
+  }
+  .live-dot::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 
-/* ── NAV ── */
-function Nav({tab,go}){
-  return(
-    <nav style={{position:'sticky',top:0,zIndex:200,background:'rgba(255,255,255,.96)',
-      backdropFilter:'blur(10px)',borderBottom:`1px solid ${C.border}`}}>
-      <div style={{maxWidth:1060,margin:'0 auto',height:52,display:'flex',
-        alignItems:'center',padding:'0 24px'}}>
-        <button onClick={()=>go('landing')} style={{background:'none',border:'none',
-          cursor:'pointer',fontSize:15,fontWeight:700,color:C.text,fontFamily:FF.d,
-          letterSpacing:'-.01em'}}>Rscore</button>
-        <div style={{flex:1}}/>
-        {[['rankings','Rankings'],['pricing','Pricing']].map(([p,l])=>(
-          <button key={p} onClick={()=>go(p)} style={{background:'none',border:'none',
-            cursor:'pointer',fontSize:13,fontWeight:500,padding:'5px 12px',borderRadius:5,
-            color:tab===p?C.accent:C.mid,background:tab===p?C.abg:'transparent',
-            marginRight:2,transition:'all .12s'}}>{l}</button>
-        ))}
-        <div style={{width:1,height:16,background:C.border,margin:'0 12px'}}/>
-        <Btn onClick={()=>go('rankings')} sz="sm">Get Started →</Btn>
-      </div>
-    </nav>
-  );
-}
+  .trade-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: start;
+    transition: background 0.15s;
+  }
+  .trade-item:hover { background: rgba(28,24,20,0.02); }
+  .trade-item:last-child { border-bottom: none; }
+  .trade-pair {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+  .trade-dir {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-left: 8px;
+  }
+  .dir-long { background: var(--accent-green-light); color: var(--accent-green); }
+  .dir-short { background: var(--accent-red-light); color: var(--accent-red); }
+  .trade-meta {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  .trade-meta-item {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+  .trade-meta-item span {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+  .trade-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .status-active { background: var(--accent-blue-light); color: var(--accent-blue); }
+  .status-tp { background: var(--accent-green-light); color: var(--accent-green); }
+  .status-sl { background: var(--accent-red-light); color: var(--accent-red); }
+  .trade-rr {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+  .trade-rr strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
 
-/* ── LIVE TICKER ── */
-function Ticker(){
-  const items = [
-    "Karim A. closed +2.1R on EUR/USD","14 new subscribers in the last hour",
-    "Sarah M. win streak: 7 trades","Liu W. Recovery Score: 3.97","Marc B. closed +1.8R on GBP/JPY",
-    "Dani R. 63% winrate — 89 trades","Recovery Score updated live after each trade","143 verified traders · 0 unverified",
-  ];
-  const all = [...items,...items];
-  return(
-    <div style={{background:'#111',borderBottom:`1px solid #222`,overflow:'hidden',height:34,
-      display:'flex',alignItems:'center'}}>
-      <div style={{display:'flex',animation:'ticker 40s linear infinite',whiteSpace:'nowrap'}}>
-        {all.map((item,i)=>(
-          <span key={i} style={{display:'inline-flex',alignItems:'center',gap:8,
-            fontFamily:FF.m,fontSize:11,color:'#aaa',padding:'0 28px'}}>
-            <span style={{width:5,height:5,borderRadius:'50%',background:'#4ade80',flexShrink:0}}/>
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
+  .hero-panel-footer {
+    padding: 12px 20px;
+    background: rgba(28,24,20,0.02);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
 
-/* ── LANDING ── */
-function Landing({go}){
-  const [openFaq,setFaq]=useState(null);
+  /* ===================== STATEMENT ===================== */
+  .statement-block {
+    background: var(--bg-dark);
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .statement-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(155,126,58,0.4), transparent);
+  }
+  .statement-inner {
+    max-width: 760px;
+  }
+  .statement-block .section-label { color: rgba(155,126,58,0.6); }
+  .statement-block .section-label::before { background: rgba(155,126,58,0.6); }
+  .statement-quote {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 42px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: rgba(244,239,230,0.92);
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.01em;
+  }
+  .statement-quote em {
+    font-style: italic;
+    color: rgba(155,126,58,0.85);
+  }
+  .statement-body {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(244,239,230,0.55);
+    max-width: 560px;
+    line-height: 1.8;
+  }
+  .statement-body strong { font-weight: 500; color: rgba(244,239,230,0.8); }
 
-  return(
-    <div>
-      <style>{`
-        .tr{cursor:pointer;transition:background .1s}.tr:hover{background:${C.alt}}
-        .faq-item{border-bottom:1px solid ${C.border};transition:background .1s}
-        .faq-item:hover{background:${C.alt}}
-        .tcard{border:1px solid ${C.border};border-radius:10px;background:#fff;
-          transition:all .18s;cursor:pointer}
-        .tcard:hover{border-color:${C.abd};box-shadow:0 4px 16px rgba(37,99,235,.08)}
-        .rcard{border:1px solid ${C.border};border-radius:10px;padding:24px;background:#fff}
-        .stat-n{font-size:32px;font-weight:700;color:#111;line-height:1;font-family:'Inter',sans-serif;letter-spacing:-.02em}
-        .stat-l{font-size:13px;color:#999;margin-top:4px}
-        @media(max-width:720px){.hero-grid{grid-template-columns:1fr!important}.hide-mob{display:none!important}}
-      `}</style>
+  .statement-rule {
+    margin: 3rem 0;
+    padding: 2rem 2.5rem;
+    border-left: 2px solid rgba(155,126,58,0.5);
+    background: rgba(244,239,230,0.03);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .statement-rule p {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 400;
+    color: rgba(244,239,230,0.75);
+    line-height: 1.5;
+  }
 
-      <Ticker/>
+  /* ===================== HOW IT WORKS ===================== */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .how-step {
+    background: var(--bg-card);
+    padding: 40px 36px;
+    position: relative;
+  }
+  .how-step:not(:last-child) { border-right: 1px solid var(--border); }
+  .how-num {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 64px;
+    font-weight: 400;
+    color: rgba(28,24,20,0.07);
+    line-height: 1;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+  .how-step h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+  .how-step p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .how-step .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-amber);
+    background: var(--accent-amber-light);
+    padding: 3px 8px;
+    border-radius: 2px;
+    margin-top: 1.25rem;
+  }
 
-      {/* ── HERO ── */}
-      <div style={{maxWidth:1060,margin:'0 auto',padding:'72px 24px 64px'}}>
-        <div className="hero-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',
-          gap:56,alignItems:'center'}}>
-          <div>
-            <div className="fu" style={{display:'inline-flex',alignItems:'center',gap:7,
-              background:C.gbg,border:`1px solid ${C.gbd}`,borderRadius:20,
-              padding:'4px 12px 4px 8px',marginBottom:24}}>
-              <span style={{width:6,height:6,borderRadius:'50%',background:C.green,
-                animation:'pulse 2s infinite'}}/>
-              <span style={{fontSize:11,fontWeight:600,color:C.green,fontFamily:FF.m}}>
-                3,200+ ACTIVE SUBSCRIBERS
-              </span>
-            </div>
+  /* Section h2 */
+  h2.section-h2 {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+  h2.section-h2 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .section-sub {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 520px;
+    line-height: 1.75;
+  }
 
-            <h1 className="fu d1" style={{fontSize:'clamp(34px,4vw,52px)',fontWeight:700,
-              lineHeight:1.1,letterSpacing:'-.03em',color:C.text,marginBottom:20}}>
-              Copy verified traders.<br/>
-              <span style={{color:C.accent}}>Earn without guessing.</span>
-            </h1>
+  /* ===================== COMPARISON ===================== */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 3rem;
+  }
+  .compare-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .compare-card-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .compare-card-header h3 {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+  .compare-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    margin-left: auto;
+  }
+  .badge-legacy { background: var(--accent-red-light); color: var(--accent-red); }
+  .badge-tl { background: var(--accent-green-light); color: var(--accent-green); }
+  .compare-list {
+    padding: 24px 28px;
+    list-style: none;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .compare-list li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    display: flex; align-items: flex-start; gap: 10px;
+    line-height: 1.5;
+  }
+  .compare-list li::before {
+    content: '';
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .compare-card.legacy .compare-list li::before {
+    background: var(--accent-red-light);
+    outline: 1.5px solid var(--accent-red);
+    outline-offset: -3px;
+  }
+  .compare-card.tl .compare-list li {
+    color: var(--text-primary);
+  }
+  .compare-card.tl .compare-list li::before {
+    background: var(--accent-green);
+  }
 
-            <p className="fu d2" style={{fontSize:16,color:C.mid,lineHeight:1.65,
-              maxWidth:420,marginBottom:12}}>
-              Choose a trader ranked by risk efficiency — not luck.
-              Get their exact signals. Execute in your own broker.
-            </p>
+  /* ===================== METRICS ===================== */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .metric-card {
+    background: var(--bg-card);
+    padding: 36px 28px;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .metric-card:last-child { border-right: none; }
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+  }
+  .metric-value {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .metric-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .metrics-note {
+    margin-top: 1.5rem;
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .metrics-note::before {
+    content: '—';
+    color: var(--gold);
+  }
 
-            <p className="fu d2" style={{fontSize:14,color:C.faint,lineHeight:1.6,
-              maxWidth:400,marginBottom:32}}>
-              No trading experience required. No auto-execution. You stay in control.
-            </p>
+  /* ===================== FEED ===================== */
+  .feed-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 40px;
+    margin-top: 3rem;
+    align-items: start;
+  }
+  .feed-list {
+    display: flex; flex-direction: column; gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .feed-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .feed-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
 
-            <div className="fu d3" style={{display:'flex',gap:10,marginBottom:24}}>
-              <Btn onClick={()=>go('rankings')} sz="lg">Start Copying Now</Btn>
-              <Btn onClick={()=>go('pricing')} v="s" sz="lg">See Pricing</Btn>
-            </div>
+  .feed-trade {
+    background: var(--bg-card);
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+    transition: background 0.15s;
+    cursor: default;
+  }
+  .feed-trade:hover { background: rgba(28,24,20,0.015); }
+  .feed-trade:last-child { border-bottom: none; }
+  .feed-trade-top {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .feed-pair {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+  .feed-trader {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .trader-avatar {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--border-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+  .feed-levels {
+    display: flex; gap: 16px;
+    margin-top: 8px;
+  }
+  .level-item {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .level-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .level-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
 
-            <div className="fu d4" style={{display:'flex',gap:24,flexWrap:'wrap'}}>
-              {[['143','Verified traders'],['18.7K','Trades tracked'],['$0','Hidden fees']].map(([v,l])=>(
-                <div key={l}>
-                  <div className="stat-n">{v}</div>
-                  <div className="stat-l">{l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+  .feed-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .feed-rr {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .feed-rr-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: right;
+  }
 
-          {/* Hero right — mini leaderboard */}
-          <div className="fu d2 hide-mob">
-            <div style={{border:`1px solid ${C.border}`,borderRadius:12,overflow:'hidden',
-              boxShadow:'0 4px 24px rgba(0,0,0,.07)'}}>
-              <div style={{padding:'13px 18px',borderBottom:`1px solid ${C.border}`,
-                display:'flex',justifyContent:'space-between',alignItems:'center',
-                background:C.alt}}>
-                <span style={{fontSize:13,fontWeight:600,color:C.text}}>Top Traders This Month</span>
-                <Badge c={C.green} bg={C.gbg} bd={C.gbd}>● Live</Badge>
-              </div>
-              <table style={{width:'100%',borderCollapse:'collapse'}}>
-                <thead>
-                  <tr>
-                    {['#','Trader','Score','Return','Subs'].map(h=>(
-                      <th key={h} style={{padding:'8px 14px',textAlign:'left',fontSize:10,
-                        color:C.faint,fontFamily:FF.m,fontWeight:500,letterSpacing:'.05em',
-                        borderBottom:`1px solid ${C.border}`,background:C.alt}}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {TRADERS.slice(0,5).map((t,i)=>(
-                    <tr key={t.id} className="tr" style={{borderBottom:`1px solid ${C.border}`}}
-                      onClick={()=>{go('profile',t)}}>
-                      <td style={{padding:'10px 14px',fontFamily:FF.m,fontSize:11,color:C.faint}}>{i+1}</td>
-                      <td style={{padding:'10px 14px'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:8}}>
-                          <Av id={t.id} name={t.name} size={26} r={5}/>
-                          <div>
-                            <div style={{fontSize:12,fontWeight:600,color:C.text}}>{t.name}</div>
-                            <div style={{fontSize:10,color:C.faint,fontFamily:FF.m}}>{t.tag}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{padding:'10px 14px'}}>
-                        <span style={{fontFamily:FF.m,fontSize:13,fontWeight:700,
-                          color:C.accent}}>{t.score}</span>
-                      </td>
-                      <td style={{padding:'10px 14px'}}>
-                        <span style={{fontFamily:FF.m,fontSize:12,fontWeight:600,
-                          color:C.green}}>{t.ret}</span>
-                      </td>
-                      <td style={{padding:'10px 14px'}}>
-                        <span style={{fontSize:12,color:C.mid}}>{t.subs}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{padding:'10px 18px',background:C.alt,borderTop:`1px solid ${C.border}`,
-                display:'flex',justifyContent:'center'}}>
-                <button onClick={()=>go('rankings')} style={{background:'none',border:'none',
-                  cursor:'pointer',fontSize:12,color:C.accent,fontWeight:600,fontFamily:FF.d}}>
-                  View full rankings →
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  /* Sidebar */
+  .feed-sidebar {
+    display: flex; flex-direction: column; gap: 16px;
+    position: sticky; top: 80px;
+  }
+  .sidebar-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .sidebar-card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .sidebar-card-body { padding: 16px 18px; }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-row-label { color: var(--text-tertiary); font-size: 12px; }
+  .stat-row-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .stat-row-value.green { color: var(--accent-green); }
+  .stat-row-value.amber { color: var(--accent-amber); }
 
-      {/* ── PAIN POINTS ── */}
-      <div style={{background:C.alt,borderTop:`1px solid ${C.border}`,
-        borderBottom:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:1060,margin:'0 auto',padding:'56px 24px'}}>
-          <div style={{textAlign:'center',marginBottom:40}}>
-            <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-              textTransform:'uppercase',marginBottom:10}}>Sound familiar?</div>
-            <h2 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em'}}>
-              If you're in this category, this is for you.
-            </h2>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
-            {[
-              {icon:'📉',head:"Losing money trading",body:"You've tried strategies. They work for a while, then don't. The market feels random because you're missing edge."},
-              {icon:'⏱',head:"No time to analyse",body:"Markets move 24/7. You have a job, a life. You can't watch charts all day — but you still want exposure to trading returns."},
-              {icon:'🤷',head:"Don't know who to trust",body:"Telegram groups. Paid signals. Gurus. Impossible to verify their actual track record. You've been burned before."},
-            ].map(p=>(
-              <div key={p.head} style={{background:'#fff',border:`1px solid ${C.border}`,
-                borderRadius:9,padding:24}}>
-                <div style={{fontSize:24,marginBottom:12}}>{p.icon}</div>
-                <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:8}}>{p.head}</div>
-                <div style={{fontSize:13,color:C.mid,lineHeight:1.65}}>{p.body}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  /* ===================== TRADER PROFILE ===================== */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    margin-top: 3rem;
+  }
+  .profile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: fit-content;
+  }
+  .profile-header {
+    padding: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border-md);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garant', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+  .profile-name {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+  .profile-handle {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+  .reputation-score {
+    margin-top: 1.5rem;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rep-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .rep-value {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .rep-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 
-      {/* ── HOW IT WORKS ── */}
-      <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-        <div style={{textAlign:'center',marginBottom:48}}>
-          <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-            textTransform:'uppercase',marginBottom:10}}>How it works</div>
-          <h2 style={{fontSize:30,fontWeight:700,color:C.text,letterSpacing:'-.025em',marginBottom:10}}>
-            Three steps. That's it.
-          </h2>
-          <p style={{fontSize:15,color:C.mid,maxWidth:420,margin:'0 auto'}}>
-            No setup complexity. No broker integrations. No API keys.
-          </p>
-        </div>
+  .profile-stats {
+    padding: 20px 28px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .profile-stat {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .profile-stat:last-child { border-bottom: none; }
+  .profile-stat-label { color: var(--text-tertiary); }
+  .profile-stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .profile-stat-value.pos { color: var(--accent-green); }
 
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,
-          border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
-          {[
-            {n:'01',head:'Browse verified traders',
-             body:'Filter by Recovery Score, drawdown, asset class, and win rate. Every stat is computed from immutable trade history — nothing self-reported.',
-             detail:'Minimum 20 trades to be listed'},
-            {n:'02',head:'Set your risk parameters',
-             body:'Enter your account balance and choose how much to risk per trade (we suggest 1%). The platform calculates your exact position size automatically.',
-             detail:'Works with any account size'},
-            {n:'03',head:'Execute in your own broker',
-             body:'When a signal fires, you\'ll see the full details: asset, direction, entry, stop loss, take profit, and position size. One tap to copy. You execute where you trade.',
-             detail:'MT4 · MT5 · Binance · any broker'},
-          ].map((s,i)=>(
-            <div key={s.n} style={{padding:32,borderRight:i<2?`1px solid ${C.border}`:'none',
-              background:i===1?C.alt:'#fff'}}>
-              <div style={{fontFamily:FF.m,fontSize:12,fontWeight:600,color:C.accent,
-                marginBottom:16,letterSpacing:'.04em'}}>{s.n}</div>
-              <div style={{fontSize:17,fontWeight:700,color:C.text,marginBottom:12,
-                lineHeight:1.3}}>{s.head}</div>
-              <div style={{fontSize:13,color:C.mid,lineHeight:1.65,marginBottom:16}}>{s.body}</div>
-              <div style={{fontSize:11,color:C.faint,fontFamily:FF.m}}>{s.detail}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+  /* Equity curve */
+  .equity-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .equity-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .equity-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .equity-return {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent-green);
+    font-weight: 500;
+  }
+  .equity-chart-area {
+    padding: 24px 24px 16px;
+    height: 180px;
+    position: relative;
+  }
 
-      {/* ── TRADERS SECTION ── */}
-      <div style={{background:C.alt,borderTop:`1px solid ${C.border}`,
-        borderBottom:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',
-            marginBottom:32,flexWrap:'wrap',gap:12}}>
-            <div>
-              <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-                textTransform:'uppercase',marginBottom:10}}>Top Traders</div>
-              <h2 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em'}}>
-                Real performance. Verified history.
-              </h2>
-            </div>
-            <Btn onClick={()=>go('rankings')} v="a">See all rankings →</Btn>
-          </div>
+  /* ===================== TRUST ===================== */
+  .trust-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .trust-item {
+    background: var(--bg-card);
+    padding: 36px 32px;
+    border-right: 1px solid var(--border);
+  }
+  .trust-item:last-child { border-right: none; }
+  .trust-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.25rem;
+    font-size: 16px;
+  }
+  .trust-item h3 {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+  .trust-item p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-weight: 300;
+  }
 
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
-            {TRADERS.slice(0,6).map(t=>(
-              <div key={t.id} className="tcard" onClick={()=>go('profile',t)}
-                style={{padding:22}}>
-                <div style={{display:'flex',justifyContent:'space-between',
-                  alignItems:'flex-start',marginBottom:16}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <Av id={t.id} name={t.name}/>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:600,color:C.text}}>{t.name}</div>
-                      <div style={{fontSize:11,color:C.faint,fontFamily:FF.m}}>@{t.handle}</div>
-                    </div>
-                  </div>
-                  <Badge>{t.tag}</Badge>
-                </div>
+  /* ===================== FINAL CTA ===================== */
+  .final-cta {
+    background: var(--bg-dark);
+    padding: 120px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(155,126,58,0.4), transparent);
+  }
+  .final-cta .section-label {
+    justify-content: center;
+    color: rgba(155,126,58,0.6);
+    margin-bottom: 2rem;
+  }
+  .final-cta .section-label::before { background: rgba(155,126,58,0.6); }
+  .final-h2 {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: rgba(244,239,230,0.9);
+    margin-bottom: 1.5rem;
+  }
+  .final-h2 em {
+    font-style: italic;
+    color: rgba(155,126,58,0.85);
+  }
+  .final-sub {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(244,239,230,0.45);
+    margin-bottom: 3.5rem;
+    line-height: 1.75;
+  }
+  .final-actions {
+    display: flex; align-items: center; justify-content: center; gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .btn-gold {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--bg);
+    border: 1px solid var(--gold);
+    padding: 13px 32px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: background 0.2s, opacity 0.2s;
+    cursor: pointer;
+  }
+  .btn-gold:hover { opacity: 0.85; }
+  .btn-outline-light {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(244,239,230,0.5);
+    border: 1px solid rgba(244,239,230,0.15);
+    padding: 13px 32px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  .btn-outline-light:hover { color: rgba(244,239,230,0.8); border-color: rgba(244,239,230,0.35); }
+  .final-note {
+    margin-top: 3rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: rgba(244,239,230,0.2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-                  {[
-                    ['Recovery Score',t.score,C.accent],
-                    ['Total R',`+${t.r}R`,C.green],
-                    ['Max Drawdown',`-${t.dd}R`,C.red],
-                    ['Win Rate',`${t.win}%`,C.text],
-                  ].map(([l,v,c])=>(
-                    <div key={l} style={{background:C.alt,borderRadius:6,padding:'8px 10px'}}>
-                      <div style={{fontSize:10,color:C.faint,fontFamily:FF.m,marginBottom:3}}>{l}</div>
-                      <div style={{fontFamily:FF.m,fontSize:14,fontWeight:700,color:c}}>{v}</div>
-                    </div>
-                  ))}
-                </div>
+  /* FOOTER */
+  footer {
+    background: var(--bg-dark);
+    border-top: 1px solid rgba(244,239,230,0.06);
+    padding: 40px 0;
+  }
+  .footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garant', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: rgba(244,239,230,0.4);
+  }
+  .footer-logo span { color: rgba(155,126,58,0.6); }
+  .footer-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: rgba(244,239,230,0.18);
+    text-transform: uppercase;
+  }
 
-                <div style={{display:'flex',justifyContent:'space-between',
-                  alignItems:'center',paddingTop:12,borderTop:`1px solid ${C.border}`}}>
-                  <span style={{fontSize:12,color:C.mid}}>{t.subs} subscribers</span>
-                  <span style={{fontSize:12,fontWeight:600,color:C.green}}>{t.ret} last 30d</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  /* CANDLESTICK DECORATION */
+  .candle-bg {
+    position: absolute;
+    right: -20px; bottom: -20px;
+    opacity: 0.04;
+    pointer-events: none;
+  }
 
-      {/* ── WHY RSCORE / TRUST ── */}
-      <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:56,alignItems:'center'}}>
-          <div>
-            <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-              textTransform:'uppercase',marginBottom:10}}>Why Rscore</div>
-            <h2 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em',marginBottom:16}}>
-              We rank by how traders<br/>handle risk — not just profit.
-            </h2>
-            <p style={{fontSize:14,color:C.mid,lineHeight:1.7,marginBottom:28}}>
-              Anyone can have a lucky streak. Recovery Score measures what happens when
-              things go wrong — how deep the drawdown was, and how efficiently the trader
-              recovered. High score = consistent, disciplined performance.
-            </p>
-            <div style={{display:'flex',gap:12}}>
-              {[
-                {label:'Trader A',r:280,dd:142,score:'1.97',note:'High profit, huge DD'},
-                {label:'Trader B',r:142,dd:29,score:'4.83',note:'Lower profit, tiny DD',best:true},
-              ].map(t=>(
-                <div key={t.label} style={{flex:1,background:t.best?C.abg:'#fff',
-                  border:`1px solid ${t.best?C.abd:C.border}`,borderRadius:8,padding:'16px'}}>
-                  <div style={{fontSize:11,fontFamily:FF.m,fontWeight:600,
-                    color:t.best?C.accent:C.faint,marginBottom:12,letterSpacing:'.04em'}}>
-                    {t.label}{t.best?' ★ BETTER':''}
-                  </div>
-                  {[['Total R',`+${t.r}R`],['Max DD',`-${t.dd}R`]].map(([l,v])=>(
-                    <div key={l} style={{display:'flex',justifyContent:'space-between',
-                      fontSize:12,padding:'5px 0',borderBottom:`1px solid ${t.best?C.abd:C.border}`}}>
-                      <span style={{color:C.mid}}>{l}</span>
-                      <span style={{fontFamily:FF.m,fontWeight:600,color:C.text}}>{v}</span>
-                    </div>
-                  ))}
-                  <div style={{display:'flex',justifyContent:'space-between',
-                    alignItems:'center',paddingTop:10}}>
-                    <span style={{fontSize:11,color:C.faint}}>{t.note}</span>
-                    <span style={{fontFamily:FF.m,fontSize:16,fontWeight:700,
-                      color:t.best?C.accent:C.faint}}>{t.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  /* Scroll fade-in */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
 
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {[
-              {icon:'🔒',head:'Immutable trade records',body:'Every trade is logged before it closes. No one — including us — can delete or edit entries. What you see is the full truth.'},
-              {icon:'📐',head:'Risk-normalised ranking',body:'We don\'t rank by dollars. We rank by R — a universal unit that makes a $500 account comparable to a $500,000 account.'},
-              {icon:'⚙️',head:'You control execution',body:'No broker integrations, no API access to your account. You receive signals and execute yourself. Your money never leaves your broker.'},
-              {icon:'🚫',head:'No pay-to-win listings',body:'Traders can\'t buy placement. Rankings are purely algorithmic — Recovery Score, trade count, and verified history.'},
-            ].map(f=>(
-              <div key={f.head} style={{display:'flex',gap:14,padding:'16px 0',
-                borderBottom:`1px solid ${C.border}`}}>
-                <span style={{fontSize:20,flexShrink:0}}>{f.icon}</span>
-                <div>
-                  <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:4}}>{f.head}</div>
-                  <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>{f.body}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Trade<span>Ledger</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#feed">Live Feed</a></li>
+    <li><a href="#profiles">Traders</a></li>
+    <li><a href="#cta" class="nav-cta">Start Tracking</a></li>
+  </ul>
+</nav>
 
-      {/* ── SOCIAL PROOF ── */}
-      <div style={{background:C.alt,borderTop:`1px solid ${C.border}`,
-        borderBottom:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-          <div style={{textAlign:'center',marginBottom:40}}>
-            <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-              textTransform:'uppercase',marginBottom:10}}>What subscribers say</div>
-            <h2 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em'}}>
-              Results people actually talk about.
-            </h2>
-          </div>
-
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:12,marginBottom:40}}>
-            {REVIEWS.map((r,i)=>(
-              <div key={i} className="rcard">
-                <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:16,
-                  fontStyle:'italic'}}>"{r.text}"</div>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:32,height:32,borderRadius:6,background:C.alt,
-                    border:`1px solid ${C.border}`,display:'flex',alignItems:'center',
-                    justifyContent:'center',fontSize:13,fontWeight:600,color:C.mid}}>
-                    {r.name[0]}
-                  </div>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.text}}>{r.name}</div>
-                    <div style={{fontSize:11,color:C.faint}}>{r.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats row */}
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-            {[
-              ['3,200+','Active subscribers'],
-              ['143','Verified traders'],
-              ['18.7K','Trades in the record'],
-              ['4.83','Highest Recovery Score'],
-            ].map(([v,l])=>(
-              <div key={l} style={{background:'#fff',border:`1px solid ${C.border}`,
-                borderRadius:9,padding:'20px 16px',textAlign:'center'}}>
-                <div style={{fontSize:28,fontWeight:700,color:C.accent,letterSpacing:'-.02em',
-                  fontFamily:FF.d,lineHeight:1,marginBottom:6}}>{v}</div>
-                <div style={{fontSize:12,color:C.faint}}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── PRICING ── */}
-      <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-            textTransform:'uppercase',marginBottom:10}}>Pricing</div>
-          <h2 style={{fontSize:30,fontWeight:700,color:C.text,letterSpacing:'-.025em',marginBottom:10}}>
-            One plan. Full access.
-          </h2>
-          <p style={{fontSize:15,color:C.mid}}>No tiers. No hidden fees. No lock-in.</p>
-        </div>
-
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,maxWidth:620,margin:'0 auto'}}>
-          {/* Free */}
-          <div style={{border:`1px solid ${C.border}`,borderRadius:10,padding:28}}>
-            <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.06em',marginBottom:14}}>FREE</div>
-            <div style={{fontSize:40,fontWeight:700,color:C.text,fontFamily:FF.m,marginBottom:4}}>$0</div>
-            <div style={{fontSize:12,color:C.faint,marginBottom:20}}>Forever</div>
-            {[['Top 5 traders',true],['Score & summary stats',true],['Full trade history',false],
-              ['Copy signals',false],['Risk calculator',false]].map(([f,ok])=>(
-              <div key={f} style={{display:'flex',alignItems:'center',gap:9,padding:'7px 0',
-                borderBottom:`1px solid ${C.border}`,opacity:ok?1:.4}}>
-                <span style={{color:ok?C.green:C.faint,fontSize:13}}>{ok?'✓':'×'}</span>
-                <span style={{fontSize:13,color:C.mid}}>{f}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Pro */}
-          <div style={{border:`2px solid ${C.accent}`,borderRadius:10,padding:28,
-            position:'relative',overflow:'hidden'}}>
-            <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:C.accent}}/>
-            <div style={{display:'flex',justifyContent:'space-between',marginBottom:14}}>
-              <span style={{fontSize:11,fontFamily:FF.m,color:C.accent,letterSpacing:'.06em'}}>PRO</span>
-              <Badge c={C.accent} bg={C.abg} bd={C.abd}>Most popular</Badge>
-            </div>
-            <div style={{fontSize:40,fontWeight:700,color:C.text,fontFamily:FF.m,marginBottom:4}}>$19</div>
-            <div style={{fontSize:12,color:C.faint,marginBottom:20}}>/month · cancel anytime</div>
-            {[['All 143 verified traders'],['Full trade history'],['Copy trade signals'],
-              ['Risk calculator'],['Filters & sorting'],['Priority support']].map(([f])=>(
-              <div key={f} style={{display:'flex',alignItems:'center',gap:9,padding:'7px 0',
-                borderBottom:`1px solid ${C.border}`}}>
-                <span style={{color:C.green,fontSize:13}}>✓</span>
-                <span style={{fontSize:13,color:C.mid}}>{f}</span>
-              </div>
-            ))}
-            <Btn onClick={()=>go('pricing')} full sz="lg" style={{marginTop:20}}>Start Now</Btn>
-            <div style={{textAlign:'center',fontSize:11,color:C.faint,marginTop:10}}>
-              Cancel anytime. No contracts.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── FAQ ── */}
-      <div style={{background:C.alt,borderTop:`1px solid ${C.border}`,
-        borderBottom:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:720,margin:'0 auto',padding:'64px 24px'}}>
-          <div style={{textAlign:'center',marginBottom:40}}>
-            <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.08em',
-              textTransform:'uppercase',marginBottom:10}}>FAQ</div>
-            <h2 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em'}}>
-              Questions we actually get.
-            </h2>
-          </div>
-          <div style={{background:'#fff',border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
-            {FAQS.map((f,i)=>(
-              <div key={i} className="faq-item" style={{borderBottom:i<FAQS.length-1?`1px solid ${C.border}`:'none'}}>
-                <button onClick={()=>setFaq(openFaq===i?null:i)}
-                  style={{width:'100%',background:'none',border:'none',cursor:'pointer',
-                    padding:'18px 20px',display:'flex',justifyContent:'space-between',
-                    alignItems:'center',textAlign:'left',gap:16}}>
-                  <span style={{fontSize:14,fontWeight:600,color:C.text}}>{f.q}</span>
-                  <span style={{color:C.faint,fontSize:18,flexShrink:0,
-                    transition:'transform .2s',
-                    transform:openFaq===i?'rotate(45deg)':'rotate(0)'}}>+</span>
-                </button>
-                {openFaq===i && (
-                  <div style={{padding:'0 20px 18px',fontSize:13,color:C.mid,lineHeight:1.7}}>
-                    {f.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── FINAL CTA ── */}
-      <div style={{maxWidth:1060,margin:'0 auto',padding:'72px 24px',textAlign:'center'}}>
-        <h2 style={{fontSize:36,fontWeight:700,color:C.text,letterSpacing:'-.03em',marginBottom:14}}>
-          Stop guessing.<br/>Start copying people who know what they're doing.
-        </h2>
-        <p style={{fontSize:16,color:C.mid,maxWidth:440,margin:'0 auto 32px'}}>
-          3,200 subscribers. 143 verified traders. Full transparency. $19/month.
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Left: copy -->
+      <div>
+        <div class="hero-eyebrow">Forex &amp; Metals · Reputation System</div>
+        <h1>Trading without<br><em>manipulation.</em></h1>
+        <p class="hero-sub">
+          A transparent ledger for serious traders.
+          Every trade is <strong>published once and locked forever</strong> —
+          no edits, no stop movement, no averages.
+          Only fixed risk/reward and final outcomes.
         </p>
-        <div style={{display:'flex',gap:12,justifyContent:'center'}}>
-          <Btn onClick={()=>go('rankings')} sz="lg">View Top Traders</Btn>
-          <Btn onClick={()=>go('pricing')} v="s" sz="lg">See Pricing</Btn>
-        </div>
-        <div style={{marginTop:20,fontSize:12,color:C.faint,fontFamily:FF.m}}>
-          No credit card required to browse · Cancel anytime
+        <div class="hero-actions">
+          <a href="#feed" class="btn-primary">View Live Trades →</a>
+          <a href="#how" class="btn-ghost">How It Works <span class="btn-ghost-arrow">↓</span></a>
         </div>
       </div>
 
-      {/* ── FOOTER ── */}
-      <div style={{borderTop:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:1060,margin:'0 auto',padding:'36px 24px',
-          display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:28}}>
+      <!-- Right: live preview panel -->
+      <div class="hero-panel fade-in">
+        <div class="hero-panel-header">
+          <span class="hero-panel-title">Live Feed</span>
+          <span class="live-dot">Live</span>
+        </div>
+
+        <div class="trade-item">
           <div>
-            <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:8}}>Rscore</div>
-            <div style={{fontSize:13,color:C.faint,lineHeight:1.65,maxWidth:180}}>
-              Risk-adjusted trader rankings. No noise. No illusions.
+            <div>
+              <span class="trade-pair">XAUUSD</span>
+              <span class="trade-dir dir-long">Long</span>
+            </div>
+            <div class="trade-meta">
+              <span class="trade-meta-item">Entry <span>2,318.40</span></span>
+              <span class="trade-meta-item">SL <span>2,302.00</span></span>
+              <span class="trade-meta-item">TP <span>2,367.20</span></span>
             </div>
           </div>
-          {[
-            {title:'Product',ls:['Rankings','How it Works','Pricing','Copy Signals']},
-            {title:'Company',ls:['About','Blog','Contact','Careers']},
-            {title:'Legal',ls:['Terms','Privacy','Disclaimer','Cookies']},
-          ].map(col=>(
-            <div key={col.title}>
-              <div style={{fontSize:11,fontWeight:600,color:C.text,letterSpacing:'.06em',
-                textTransform:'uppercase',marginBottom:14}}>{col.title}</div>
-              {col.ls.map(l=>(
-                <div key={l} style={{fontSize:13,color:C.faint,marginBottom:9,cursor:'pointer'}}
-                  onMouseOver={e=>e.target.style.color=C.accent}
-                  onMouseOut={e=>e.target.style.color=C.faint}>{l}</div>
-              ))}
-            </div>
-          ))}
+          <div>
+            <div class="trade-rr"><strong>1 : 3</strong>RR</div>
+            <div class="trade-status status-active">Active</div>
+          </div>
         </div>
-        <div style={{borderTop:`1px solid ${C.border}`,maxWidth:1060,margin:'0 auto',
-          padding:'16px 24px',display:'flex',justifyContent:'space-between',
-          fontSize:11,color:C.faint,flexWrap:'wrap',gap:8}}>
-          <span>© 2025 Rscore. All rights reserved.</span>
-          <span>Past performance does not guarantee future results. Trade responsibly.</span>
+
+        <div class="trade-item">
+          <div>
+            <div>
+              <span class="trade-pair">EURUSD</span>
+              <span class="trade-dir dir-short">Short</span>
+            </div>
+            <div class="trade-meta">
+              <span class="trade-meta-item">Entry <span>1.0874</span></span>
+              <span class="trade-meta-item">SL <span>1.0912</span></span>
+              <span class="trade-meta-item">TP <span>1.0788</span></span>
+            </div>
+          </div>
+          <div>
+            <div class="trade-rr"><strong>1 : 2.3</strong>RR</div>
+            <div class="trade-status status-tp">TP Hit</div>
+          </div>
+        </div>
+
+        <div class="trade-item">
+          <div>
+            <div>
+              <span class="trade-pair">XAGUSD</span>
+              <span class="trade-dir dir-long">Long</span>
+            </div>
+            <div class="trade-meta">
+              <span class="trade-meta-item">Entry <span>27.44</span></span>
+              <span class="trade-meta-item">SL <span>26.90</span></span>
+              <span class="trade-meta-item">TP <span>28.88</span></span>
+            </div>
+          </div>
+          <div>
+            <div class="trade-rr"><strong>1 : 2.6</strong>RR</div>
+            <div class="trade-status status-sl">SL Hit</div>
+          </div>
+        </div>
+
+        <div class="trade-item">
+          <div>
+            <div>
+              <span class="trade-pair">GBPUSD</span>
+              <span class="trade-dir dir-long">Long</span>
+            </div>
+            <div class="trade-meta">
+              <span class="trade-meta-item">Entry <span>1.2734</span></span>
+              <span class="trade-meta-item">SL <span>1.2695</span></span>
+              <span class="trade-meta-item">TP <span>1.2812</span></span>
+            </div>
+          </div>
+          <div>
+            <div class="trade-rr"><strong>1 : 2</strong>RR</div>
+            <div class="trade-status status-active">Active</div>
+          </div>
+        </div>
+
+        <div class="hero-panel-footer">
+          All trades locked at publication · Cannot be edited or deleted
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+</section>
 
-/* ── RANKINGS ── */
-function Rankings({go,setTrader}){
-  const [sort,setSort]=useState({k:'score',d:'desc'});
-  const sorted=useMemo(()=>[...TRADERS].sort((a,b)=>sort.d==='desc'?b[sort.k]-a[sort.k]:a[sort.k]-b[sort.k]),[sort]);
-  const Th=({k,l})=>(
-    <th onClick={()=>setSort(s=>({k,d:s.k===k&&s.d==='desc'?'asc':'desc'}))}
-      style={{padding:'10px 16px',textAlign:'right',fontSize:10,fontFamily:FF.m,fontWeight:500,
-        color:sort.k===k?C.accent:C.faint,letterSpacing:'.05em',cursor:'pointer',userSelect:'none'}}>
-      {l}{sort.k===k?(sort.d==='desc'?' ↓':' ↑'):''}
-    </th>
-  );
-  return(
-    <div style={{maxWidth:1060,margin:'0 auto',padding:'44px 24px'}}>
-      <style>{`.tr2{cursor:pointer;transition:background .1s}.tr2:hover{background:${C.alt}}`}</style>
-      <h1 style={{fontSize:28,fontWeight:700,color:C.text,letterSpacing:'-.02em',marginBottom:6}}>
-        Trader Rankings
-      </h1>
-      <p style={{fontSize:14,color:C.mid,marginBottom:28}}>
-        Ranked by Recovery Score — Total R ÷ Max Drawdown. Minimum 20 trades to qualify.
+<div class="divider"></div>
+
+<!-- STATEMENT (Core Idea) -->
+<section class="statement-block">
+  <div class="container">
+    <div class="statement-inner fade-in">
+      <div class="section-label">The Standard</div>
+      <div class="statement-quote">
+        This is not a platform for<br>posting every trade.<br>
+        It is for your <em>best ideas only.</em>
+      </div>
+      <p class="statement-body">
+        Most trading platforms reward <strong>volume</strong>. More signals, more followers,
+        more noise. TradeLedger is built on the opposite principle:
+        only high-conviction, well-defined setups belong here.
+        Each trade you publish carries your name and your record — permanently.
       </p>
-      <div style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
-        <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead>
-            <tr style={{background:C.alt,borderBottom:`1px solid ${C.border}`}}>
-              <th style={{padding:'10px 16px',textAlign:'left',fontSize:10,color:C.faint,fontFamily:FF.m}}>#</th>
-              <th style={{padding:'10px 16px',textAlign:'left',fontSize:10,color:C.faint,fontFamily:FF.m}}>TRADER</th>
-              <Th k="score" l="SCORE"/>
-              <Th k="r" l="TOTAL R"/>
-              <Th k="dd" l="MAX DD"/>
-              <Th k="win" l="WIN%"/>
-              <Th k="t" l="TRADES"/>
-              <th style={{padding:'10px 16px',textAlign:'right',fontSize:10,color:C.faint,fontFamily:FF.m}}>30D</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((t,i)=>(
-              <tr key={t.id} className="tr2" style={{borderBottom:`1px solid ${C.border}`}}
-                onClick={()=>{setTrader(t);go('profile',t)}}>
-                <td style={{padding:'13px 16px',fontFamily:FF.m,fontSize:11,color:C.faint}}>{i+1}</td>
-                <td style={{padding:'13px 16px'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <Av id={t.id} name={t.name}/>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>{t.name}</div>
-                      <div style={{fontSize:11,color:C.faint,fontFamily:FF.m}}>@{t.handle}</div>
-                    </div>
-                    <Badge>{t.tag}</Badge>
-                  </div>
-                </td>
-                <td style={{padding:'13px 16px',textAlign:'right'}}>
-                  <span style={{fontFamily:FF.m,fontSize:14,fontWeight:700,
-                    color:t.score>=4?C.accent:C.mid}}>{t.score}</span>
-                </td>
-                <td style={{padding:'13px 16px',textAlign:'right',fontFamily:FF.m,fontSize:13,fontWeight:600,color:C.green}}>+{t.r}R</td>
-                <td style={{padding:'13px 16px',textAlign:'right',fontFamily:FF.m,fontSize:13,fontWeight:600,color:C.red}}>-{t.dd}R</td>
-                <td style={{padding:'13px 16px',textAlign:'right',fontFamily:FF.m,fontSize:13,color:C.mid}}>{t.win}%</td>
-                <td style={{padding:'13px 16px',textAlign:'right',fontFamily:FF.m,fontSize:13,color:C.mid}}>{t.t}</td>
-                <td style={{padding:'13px 16px',textAlign:'right',fontFamily:FF.m,fontSize:13,fontWeight:600,
-                  color:t.ret.startsWith('+')?C.green:C.red}}>{t.ret}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div class="statement-rule">
+        <p>"If a trade is not worth staking your reputation on — don't publish it."</p>
+      </div>
+      <p class="statement-body">
+        When traders know their record cannot be altered,
+        they become <strong>selective by necessity</strong>. That selectivity is what
+        makes TradeLedger's data worth reading.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-label">Process</div>
+    <h2 class="section-h2">Three steps.<br><em>No exceptions.</em></h2>
+    <p class="section-sub">The mechanics are intentionally rigid. Rigidity is what makes the data credible.</p>
+
+    <div class="how-grid fade-in">
+      <div class="how-step">
+        <span class="how-num">01</span>
+        <h3>Publish your trade</h3>
+        <p>Define your entry, stop loss, and take profit. Every field is mandatory. Partial setups are not accepted.</p>
+        <div class="tag">Entry · SL · TP required</div>
+      </div>
+      <div class="how-step">
+        <span class="how-num">02</span>
+        <h3>It locks. Forever.</h3>
+        <p>The moment a trade is published, it is sealed. No edits. No stop movement. No additions. The only outcome is TP hit, SL hit, or still active.</p>
+        <div class="tag">Immutable record</div>
+      </div>
+      <div class="how-step">
+        <span class="how-num">03</span>
+        <h3>Your record builds</h3>
+        <p>Each trade adds to your permanent performance history. Winrate, expectancy, and drawdown are calculated on the unedited record — automatically.</p>
+        <div class="tag">Verified metrics only</div>
       </div>
     </div>
-  );
-}
+  </div>
+</section>
 
-/* ── PROFILE ── */
-function Profile({trader,go,onCopy}){
-  if(!trader)return null;
-  const TR=[
-    {d:'2025-04-28',a:'EUR/USD',e:'1.0832',sl:'1.0812',tp:'1.0872',r:'+2R',w:true},
-    {d:'2025-04-25',a:'BTC/USD',e:'68,240',sl:'66,900',tp:'70,900',r:'+2R',w:true},
-    {d:'2025-04-22',a:'GBP/JPY',e:'193.40',sl:'192.80',tp:'194.60',r:'+2R',w:true},
-    {d:'2025-04-19',a:'EUR/USD',e:'1.0711',sl:'1.0731',tp:'1.0671',r:'-1R', w:false},
-    {d:'2025-04-17',a:'GOLD',   e:'2,344', sl:'2,324', tp:'2,384', r:'+2R',w:true},
-    {d:'2025-04-14',a:'NAS100', e:'18,234',sl:'18,034',tp:'18,634',r:'+2R',w:true},
-  ];
-  return(
-    <div style={{maxWidth:1060,margin:'0 auto',padding:'40px 24px'}}>
-      <style>{`.th2{transition:background .1s}.th2:hover{background:${C.alt}}`}</style>
-      <button onClick={()=>go('rankings')} style={{background:'none',border:'none',cursor:'pointer',
-        fontSize:13,fontWeight:500,color:C.mid,fontFamily:FF.d,marginBottom:24,
-        display:'flex',alignItems:'center',gap:5}}>← Rankings</button>
-      <div style={{border:`1px solid ${C.border}`,borderRadius:10,padding:28,marginBottom:14}}>
-        <div style={{display:'flex',alignItems:'flex-start',gap:16,flexWrap:'wrap'}}>
-          <Av id={trader.id} name={trader.name} size={48} r={10}/>
-          <div style={{flex:1,minWidth:160}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-              <h1 style={{fontSize:20,fontWeight:700,color:C.text,letterSpacing:'-.02em'}}>{trader.name}</h1>
-              <Badge c={C.green} bg={C.gbg} bd={C.gbd}>Verified</Badge>
-              <Badge>{trader.tag}</Badge>
-            </div>
-            <div style={{fontFamily:FF.m,fontSize:11,color:C.faint}}>@{trader.handle}</div>
-          </div>
-          <div style={{display:'flex',gap:10}}>
-            <Btn v="s">Subscribe</Btn>
-            <Btn onClick={onCopy}>Copy Trades</Btn>
-          </div>
+<div class="divider"></div>
+
+<!-- WHY DIFFERENT -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Distinction</div>
+    <h2 class="section-h2">Why this is <em>different.</em></h2>
+    <p class="section-sub">Traditional signal platforms were not designed for accountability. TradeLedger was built for nothing else.</p>
+
+    <div class="compare-grid fade-in">
+      <div class="compare-card legacy">
+        <div class="compare-card-header">
+          <h3>Traditional platforms</h3>
+          <span class="compare-badge badge-legacy">Legacy model</span>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))',gap:10,marginTop:20}}>
-          {[['Score',trader.score,C.accent,C.abg,C.abd],['Total R',`+${trader.r}R`,C.green,C.gbg,C.gbd],
-            ['Max DD',`-${trader.dd}R`,C.red,C.rbg,C.rbd],['Win Rate',`${trader.win}%`,C.text,C.alt,C.border],
-            ['Trades',trader.t,C.text,C.alt,C.border],['30D',trader.ret,C.green,C.gbg,C.gbd]
-          ].map(([l,v,c,bg,bd])=>(
-            <div key={l} style={{background:bg,border:`1px solid ${bd}`,borderRadius:8,padding:'10px 12px'}}>
-              <div style={{fontSize:10,color:C.faint,fontFamily:FF.m,letterSpacing:'.06em',
-                textTransform:'uppercase',marginBottom:4}}>{l}</div>
-              <div style={{fontFamily:FF.m,fontSize:16,fontWeight:700,color:c}}>{v}</div>
-            </div>
-          ))}
-        </div>
+        <ul class="compare-list">
+          <li>Stop losses can be moved after entry, hiding risk expansion</li>
+          <li>Trades can be deleted when results turn unfavorable</li>
+          <li>Averaging down obscures the true risk of a position</li>
+          <li>Drawdown figures are frequently omitted or distorted</li>
+          <li>Providers are incentivized to post high volume, not high quality</li>
+        </ul>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <div style={{border:`1px solid ${C.border}`,borderRadius:10,padding:22}}>
-          <h2 style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:14}}>Performance</h2>
-          {[['Avg R/trade',`+${(trader.r/trader.t).toFixed(2)}R`],['Best trade','+4.5R'],
-            ['Worst trade','-1.0R'],['Avg win','+2.1R'],['Avg loss','-0.9R']].map(([l,v])=>(
-            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',
-              borderBottom:`1px solid ${C.border}`,fontSize:13}}>
-              <span style={{color:C.mid}}>{l}</span>
-              <span style={{fontFamily:FF.m,fontWeight:600,
-                color:v.startsWith('+')?C.green:v.startsWith('-')?C.red:C.text}}>{v}</span>
-            </div>
-          ))}
+      <div class="compare-card tl">
+        <div class="compare-card-header">
+          <h3>TradeLedger</h3>
+          <span class="compare-badge badge-tl">This platform</span>
         </div>
-        <div style={{border:`1px solid ${C.border}`,borderRadius:10,padding:22}}>
-          <h2 style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:6}}>Risk Insights</h2>
-          <p style={{fontSize:11,color:C.faint,marginBottom:14}}>Auto-generated from trade history</p>
-          {[['Max losing streak','4 trades'],['Recovery time','12 days avg'],
-            ['R/R ratio','2.1 avg'],['Position sizing','Uniform 1R']].map(([l,v])=>(
-            <div key={l} style={{background:C.alt,border:`1px solid ${C.border}`,borderRadius:6,
-              padding:'9px 12px',marginBottom:8,display:'flex',justifyContent:'space-between'}}>
-              <span style={{fontSize:12,color:C.mid}}>{l}</span>
-              <span style={{fontFamily:FF.m,fontSize:12,fontWeight:700,color:C.accent}}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
-        <div style={{padding:'13px 20px',borderBottom:`1px solid ${C.border}`,background:C.alt,
-          display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.text}}>Trade History</span>
-          <span style={{fontFamily:FF.m,fontSize:10,color:C.faint}}>READ ONLY · IMMUTABLE</span>
-        </div>
-        <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead>
-            <tr style={{background:C.alt}}>
-              {['DATE','ASSET','ENTRY','STOP LOSS','TAKE PROFIT','RESULT'].map(h=>(
-                <th key={h} style={{padding:'8px 16px',textAlign:'left',fontSize:10,
-                  color:C.faint,fontFamily:FF.m,borderBottom:`1px solid ${C.border}`}}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {TR.map((t,i)=>(
-              <tr key={i} className="th2" style={{borderBottom:`1px solid ${C.border}`}}>
-                <td style={{padding:'11px 16px',fontFamily:FF.m,fontSize:12,color:C.faint}}>{t.d}</td>
-                <td style={{padding:'11px 16px',fontSize:13,fontWeight:600,color:C.text}}>{t.a}</td>
-                <td style={{padding:'11px 16px',fontFamily:FF.m,fontSize:12}}>{t.e}</td>
-                <td style={{padding:'11px 16px',fontFamily:FF.m,fontSize:12,color:C.red}}>{t.sl}</td>
-                <td style={{padding:'11px 16px',fontFamily:FF.m,fontSize:12,color:C.green}}>{t.tp}</td>
-                <td style={{padding:'11px 16px'}}>
-                  <span style={{background:t.w?C.gbg:C.rbg,border:`1px solid ${t.w?C.gbd:C.rbd}`,
-                    color:t.w?C.green:C.red,borderRadius:4,fontFamily:FF.m,
-                    fontSize:12,fontWeight:700,padding:'2px 9px'}}>{t.r}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul class="compare-list">
+          <li>Every position is fixed at publication — entry, SL, and TP are permanent</li>
+          <li>No trade can be removed from the record once published</li>
+          <li>Risk/reward is declared upfront and calculated automatically</li>
+          <li>Maximum drawdown is visible on every trader's public profile</li>
+          <li>Traders are rewarded for selectivity, not volume of publications</li>
+        </ul>
       </div>
     </div>
-  );
-}
+  </div>
+</section>
 
-/* ── PRICING PAGE ── */
-function Pricing({go}){
-  return(
-    <div style={{maxWidth:1060,margin:'0 auto',padding:'64px 24px'}}>
-      <div style={{textAlign:'center',marginBottom:52}}>
-        <h1 style={{fontSize:40,fontWeight:700,color:C.text,letterSpacing:'-.03em',marginBottom:12}}>
-          Simple pricing.
-        </h1>
-        <p style={{fontSize:16,color:C.mid}}>One plan. Full access. Cancel anytime.</p>
+<div class="divider"></div>
+
+<!-- METRICS -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Analytics</div>
+    <h2 class="section-h2">The metrics that <em>matter.</em></h2>
+    <p class="section-sub">Every profile displays the same four core figures, calculated identically across all traders.</p>
+
+    <div class="metrics-grid fade-in">
+      <div class="metric-card">
+        <div class="metric-label">Risk / Reward</div>
+        <div class="metric-value">1:R</div>
+        <p class="metric-desc">Declared at publication. Calculated from the fixed SL and TP levels. Never adjusted.</p>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,maxWidth:600,margin:'0 auto 56px'}}>
-        <div style={{border:`1px solid ${C.border}`,borderRadius:10,padding:28}}>
-          <div style={{fontSize:11,fontFamily:FF.m,color:C.faint,letterSpacing:'.06em',marginBottom:14}}>FREE</div>
-          <div style={{fontSize:40,fontWeight:700,color:C.text,fontFamily:FF.m,marginBottom:4}}>$0</div>
-          <div style={{fontSize:12,color:C.faint,marginBottom:20}}>Forever</div>
-          {[['Top 5 traders',true],['Score overview',true],['Full trade history',false],
-            ['Copy signals',false],['Risk calculator',false]].map(([f,ok])=>(
-            <div key={f} style={{display:'flex',alignItems:'center',gap:9,padding:'7px 0',
-              borderBottom:`1px solid ${C.border}`,opacity:ok?1:.4}}>
-              <span style={{color:ok?C.green:C.faint}}>{ok?'✓':'×'}</span>
-              <span style={{fontSize:13,color:C.mid}}>{f}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{border:`2px solid ${C.accent}`,borderRadius:10,padding:28,position:'relative'}}>
-          <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:C.accent,borderRadius:'8px 8px 0 0'}}/>
-          <div style={{display:'flex',justifyContent:'space-between',marginBottom:14}}>
-            <span style={{fontSize:11,fontFamily:FF.m,color:C.accent,letterSpacing:'.06em'}}>PRO</span>
-            <Badge c={C.accent} bg={C.abg} bd={C.abd}>Most popular</Badge>
-          </div>
-          <div style={{fontSize:40,fontWeight:700,color:C.text,fontFamily:FF.m,marginBottom:4}}>$19</div>
-          <div style={{fontSize:12,color:C.faint,marginBottom:20}}>/month · cancel anytime</div>
-          {[['All 143 verified traders'],['Full trade history'],['Copy signals'],
-            ['Risk calculator'],['All filters & sorting'],['Priority support']].map(([f])=>(
-            <div key={f} style={{display:'flex',alignItems:'center',gap:9,padding:'7px 0',
-              borderBottom:`1px solid ${C.border}`}}>
-              <span style={{color:C.green}}>✓</span>
-              <span style={{fontSize:13,color:C.mid}}>{f}</span>
-            </div>
-          ))}
-          <Btn full sz="lg" style={{marginTop:18}}>Start Now</Btn>
-          <div style={{textAlign:'center',fontSize:11,color:C.faint,marginTop:10}}>Cancel anytime.</div>
-        </div>
+      <div class="metric-card">
+        <div class="metric-label">Win Rate</div>
+        <div class="metric-value">W%</div>
+        <p class="metric-desc">TP hits divided by closed trades. Includes all SL hits — nothing is excluded.</p>
       </div>
-      <div style={{maxWidth:600,margin:'0 auto'}}>
-        <h2 style={{fontSize:20,fontWeight:700,color:C.text,marginBottom:20,textAlign:'center'}}>
-          Common questions
-        </h2>
-        {FAQS.slice(0,4).map((f,i)=>(
-          <div key={i} style={{borderBottom:`1px solid ${C.border}`,padding:'16px 0'}}>
-            <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:7}}>{f.q}</div>
-            <div style={{fontSize:13,color:C.mid,lineHeight:1.65}}>{f.a}</div>
-          </div>
-        ))}
+      <div class="metric-card">
+        <div class="metric-label">Expectancy</div>
+        <div class="metric-value">E[R]</div>
+        <p class="metric-desc">Average R-multiple per trade. The single most informative measure of long-run edge.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Max Drawdown</div>
+        <div class="metric-value">DD%</div>
+        <p class="metric-desc">Peak-to-trough sequence of SL hits in consecutive R-multiples. Always visible.</p>
       </div>
     </div>
-  );
-}
+    <div class="metrics-note fade-in">
+      All metrics are calculated from fixed, immutable trade records. No manual adjustments are possible.
+    </div>
+  </div>
+</section>
 
-/* ── COPY MODAL ── */
-function CopyModal({trader,onClose}){
-  const [bal,setBal]=useState(10000);
-  const [risk,setRisk]=useState(1);
-  const [cp,setCp]=useState(false);
-  const ra=(bal*risk/100).toFixed(0);
-  const ps=(ra/20).toFixed(3);
-  const doCopy=()=>{
-    navigator.clipboard?.writeText(`EUR/USD BUY\nEntry: 1.0832 | SL: 1.0812 | TP: 1.0872\nPosition size: ${ps} lots`);
-    setCp(true);setTimeout(()=>setCp(false),2000);
-  };
-  return(
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.3)',backdropFilter:'blur(4px)',
-      zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
-      onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:'#fff',border:`1px solid ${C.border}`,borderRadius:12,
-        width:'100%',maxWidth:420,boxShadow:'0 20px 48px rgba(0,0,0,.15)'}}>
-        <div style={{padding:'18px 22px',borderBottom:`1px solid ${C.border}`,
-          display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <div style={{fontSize:15,fontWeight:700,color:C.text}}>Copy Trade</div>
-            <div style={{fontSize:12,color:C.faint,marginTop:2}}>Signal-based · You execute manually</div>
+<div class="divider"></div>
+
+<!-- LIVE FEED -->
+<section class="section" id="feed">
+  <div class="container">
+    <div class="section-label">Feed</div>
+    <h2 class="section-h2">High-conviction trades.<br><em>Nothing else.</em></h2>
+    <p class="section-sub">Every entry in this feed represents a trader's published commitment — name attached, record on the line.</p>
+
+    <div class="feed-layout fade-in">
+      <div>
+        <div class="feed-list">
+          <div class="feed-header">
+            <span class="feed-title">Recent Publications — Forex &amp; Metals</span>
+            <span class="live-dot">Live</span>
           </div>
-          <button onClick={onClose} style={{width:28,height:28,border:`1px solid ${C.border}`,
-            borderRadius:6,background:C.alt,cursor:'pointer',color:C.mid,fontSize:16,
-            display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
-        </div>
-        <div style={{padding:22}}>
-          <div style={{marginBottom:16}}>
-            <label style={{display:'block',fontSize:11,fontFamily:FF.m,color:C.faint,
-              textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>Account Balance ($)</label>
-            <input type="number" value={bal} onChange={e=>setBal(+e.target.value)}
-              style={{width:'100%',border:`1px solid ${C.borderMd}`,borderRadius:7,
-                background:C.alt,color:C.text,fontFamily:FF.m,fontSize:15,
-                fontWeight:700,padding:'10px 13px',outline:'none'}}/>
-          </div>
-          <div style={{marginBottom:20}}>
-            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-              <label style={{fontSize:11,fontFamily:FF.m,color:C.faint,
-                textTransform:'uppercase',letterSpacing:'.06em'}}>Risk Per Trade</label>
-              <span style={{fontFamily:FF.m,fontSize:13,fontWeight:700,color:C.accent}}>{risk}%</span>
-            </div>
-            <input type="range" min=".5" max="5" step=".5" value={risk}
-              onChange={e=>setRisk(+e.target.value)}
-              style={{width:'100%',accentColor:C.accent,cursor:'pointer'}}/>
-            <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
-              <span style={{fontSize:10,color:C.faint,fontFamily:FF.m}}>Conservative ≤1%</span>
-              <span style={{fontSize:10,color:C.faint,fontFamily:FF.m}}>Max 5%</span>
-            </div>
-          </div>
-          <div style={{background:C.abg,border:`1px solid ${C.abd}`,borderRadius:8,
-            padding:'13px 16px',display:'flex',gap:24,marginBottom:18}}>
+
+          <!-- Trade 1 -->
+          <div class="feed-trade">
             <div>
-              <div style={{fontSize:10,fontFamily:FF.m,color:C.faint,marginBottom:3}}>YOU RISK</div>
-              <div style={{fontFamily:FF.m,fontSize:20,fontWeight:700,color:C.accent}}>${ra}</div>
-            </div>
-            <div style={{width:1,background:C.abd}}/>
-            <div>
-              <div style={{fontSize:10,fontFamily:FF.m,color:C.faint,marginBottom:3}}>POSITION SIZE</div>
-              <div style={{fontFamily:FF.m,fontSize:20,fontWeight:700,color:C.text}}>{ps} lots</div>
-            </div>
-          </div>
-          <div style={{background:C.alt,border:`1px solid ${C.border}`,borderRadius:8,
-            overflow:'hidden',marginBottom:16}}>
-            <div style={{padding:'8px 14px',borderBottom:`1px solid ${C.border}`,
-              display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontSize:10,fontFamily:FF.m,color:C.faint}}>LATEST SIGNAL</span>
-              <Badge c={C.green} bg={C.gbg} bd={C.gbd}>EUR/USD · BUY</Badge>
-            </div>
-            <div style={{padding:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              {[['ENTRY','1.0832',C.text],['STOP LOSS','1.0812',C.red],
-                ['TAKE PROFIT','1.0872',C.green],['POSITION',`${ps} lots`,C.accent]].map(([l,v,c])=>(
-                <div key={l}>
-                  <div style={{fontSize:9,color:C.faint,fontFamily:FF.m,marginBottom:3,letterSpacing:'.05em'}}>{l}</div>
-                  <div style={{fontFamily:FF.m,fontSize:14,fontWeight:700,color:c}}>{v}</div>
+              <div class="feed-trade-top">
+                <span class="feed-pair">XAUUSD</span>
+                <span class="trade-dir dir-long">Long</span>
+                <span class="trade-status status-active">Active</span>
+              </div>
+              <div class="feed-trader">
+                <span class="trader-avatar">MR</span>
+                M. Reyes · 47 published trades · Expectancy +0.68R
+              </div>
+              <div class="feed-levels">
+                <div class="level-item">
+                  <span class="level-label">Entry</span>
+                  <span class="level-value">2,318.40</span>
                 </div>
-              ))}
+                <div class="level-item">
+                  <span class="level-label">Stop Loss</span>
+                  <span class="level-value">2,302.00</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Take Profit</span>
+                  <span class="level-value">2,367.20</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-right">
+              <div class="feed-rr">1 : 3</div>
+              <div class="feed-rr-label">Risk / Reward</div>
             </div>
           </div>
-          <div style={{display:'flex',gap:9}}>
-            <button onClick={doCopy} style={{flex:1,background:cp?C.green:C.accent,color:'#fff',
-              border:'none',borderRadius:7,fontSize:13,fontWeight:600,fontFamily:FF.d,
-              padding:'11px',cursor:'pointer',transition:'all .2s'}}>{cp?'✓ Copied!':'Copy All Values'}</button>
-            <button onClick={onClose} style={{background:C.alt,border:`1px solid ${C.border}`,
-              color:C.mid,borderRadius:7,fontSize:13,fontFamily:FF.d,padding:'11px 16px',
-              cursor:'pointer'}}>Close</button>
+
+          <!-- Trade 2 -->
+          <div class="feed-trade">
+            <div>
+              <div class="feed-trade-top">
+                <span class="feed-pair">EURUSD</span>
+                <span class="trade-dir dir-short">Short</span>
+                <span class="trade-status status-tp">TP Hit</span>
+              </div>
+              <div class="feed-trader">
+                <span class="trader-avatar">KL</span>
+                K. Laurent · 29 published trades · Expectancy +0.51R
+              </div>
+              <div class="feed-levels">
+                <div class="level-item">
+                  <span class="level-label">Entry</span>
+                  <span class="level-value">1.0874</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Stop Loss</span>
+                  <span class="level-value">1.0912</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Take Profit</span>
+                  <span class="level-value">1.0788</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-right">
+              <div class="feed-rr">1 : 2.3</div>
+              <div class="feed-rr-label">Risk / Reward</div>
+            </div>
           </div>
-          <p style={{fontSize:11,color:C.faint,marginTop:12,textAlign:'center',lineHeight:1.5}}>
-            Rscore does not execute trades. Always verify in your broker.
-          </p>
+
+          <!-- Trade 3 -->
+          <div class="feed-trade">
+            <div>
+              <div class="feed-trade-top">
+                <span class="feed-pair">XAGUSD</span>
+                <span class="trade-dir dir-long">Long</span>
+                <span class="trade-status status-sl">SL Hit</span>
+              </div>
+              <div class="feed-trader">
+                <span class="trader-avatar">AT</span>
+                A. Tanaka · 63 published trades · Expectancy +0.44R
+              </div>
+              <div class="feed-levels">
+                <div class="level-item">
+                  <span class="level-label">Entry</span>
+                  <span class="level-value">27.44</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Stop Loss</span>
+                  <span class="level-value">26.90</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Take Profit</span>
+                  <span class="level-value">28.88</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-right">
+              <div class="feed-rr">1 : 2.6</div>
+              <div class="feed-rr-label">Risk / Reward</div>
+            </div>
+          </div>
+
+          <!-- Trade 4 -->
+          <div class="feed-trade">
+            <div>
+              <div class="feed-trade-top">
+                <span class="feed-pair">GBPUSD</span>
+                <span class="trade-dir dir-short">Short</span>
+                <span class="trade-status status-tp">TP Hit</span>
+              </div>
+              <div class="feed-trader">
+                <span class="trader-avatar">SR</span>
+                S. Rousseau · 18 published trades · Expectancy +0.72R
+              </div>
+              <div class="feed-levels">
+                <div class="level-item">
+                  <span class="level-label">Entry</span>
+                  <span class="level-value">1.2742</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Stop Loss</span>
+                  <span class="level-value">1.2786</span>
+                </div>
+                <div class="level-item">
+                  <span class="level-label">Take Profit</span>
+                  <span class="level-value">1.2654</span>
+                </div>
+              </div>
+            </div>
+            <div class="feed-right">
+              <div class="feed-rr">1 : 2</div>
+              <div class="feed-rr-label">Risk / Reward</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="feed-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">Platform Summary</div>
+          <div class="sidebar-card-body">
+            <div class="stat-row">
+              <span class="stat-row-label">Active traders</span>
+              <span class="stat-row-value">214</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">Total published trades</span>
+              <span class="stat-row-value">4,831</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">Active positions</span>
+              <span class="stat-row-value">37</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">Avg R/R (all trades)</span>
+              <span class="stat-row-value green">1 : 2.41</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">Avg expectancy</span>
+              <span class="stat-row-value green">+0.38R</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">Instruments</div>
+          <div class="sidebar-card-body">
+            <div class="stat-row">
+              <span class="stat-row-label">XAUUSD</span>
+              <span class="stat-row-value">38%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">EURUSD</span>
+              <span class="stat-row-value">22%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">GBPUSD</span>
+              <span class="stat-row-value">17%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">XAGUSD</span>
+              <span class="stat-row-value">11%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row-label">Other Forex</span>
+              <span class="stat-row-value">12%</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+</section>
 
-/* ── APP ── */
-export default function App(){
-  const [tab,setTab]=useState('landing');
-  const [trader,setTrader]=useState(TRADERS[0]);
-  const [modal,setModal]=useState(false);
+<div class="divider"></div>
 
-  const go=(page,t)=>{
-    if(t) setTrader(t);
-    setTab(page);
-    window.scrollTo(0,0);
-  };
+<!-- TRADER PROFILES -->
+<section class="section" id="profiles">
+  <div class="container">
+    <div class="section-label">Profiles</div>
+    <h2 class="section-h2">Reputation is built<br><em>trade by trade.</em></h2>
+    <p class="section-sub">Each profile is a complete, unedited record. What you see is what was published. Nothing more.</p>
 
-  return(
-    <>
-      <style>{G}</style>
-      <div style={{minHeight:'100vh',background:'#fff',fontFamily:FF.d}}>
-        <Nav tab={tab} go={go}/>
-        {tab==='landing'  && <Landing go={go}/>}
-        {tab==='rankings' && <Rankings go={go} setTrader={setTrader}/>}
-        {tab==='profile'  && <Profile trader={trader} go={go} onCopy={()=>setModal(true)}/>}
-        {tab==='pricing'  && <Pricing go={go}/>}
-        {modal && <CopyModal trader={trader} onClose={()=>setModal(false)}/>}
+    <div class="profile-grid fade-in">
+      <div>
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar">MR</div>
+            <div class="profile-name">M. Reyes</div>
+            <div class="profile-handle">@reyes · Member since Jan 2024</div>
+            <div class="reputation-score">
+              <div>
+                <div class="rep-label">Reputation Score</div>
+                <div class="rep-sub">Based on 47 locked trades</div>
+              </div>
+              <div class="rep-value">88.4</div>
+            </div>
+          </div>
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <span class="profile-stat-label">Published trades</span>
+              <span class="profile-stat-value">47</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">Win rate</span>
+              <span class="profile-stat-value pos">62.1%</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">Avg R/R</span>
+              <span class="profile-stat-value">1 : 2.7</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">Expectancy</span>
+              <span class="profile-stat-value pos">+0.68R</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">Max drawdown</span>
+              <span class="profile-stat-value">−3.2R</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">Primary market</span>
+              <span class="profile-stat-value">XAUUSD</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </>
-  );
-}
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="equity-card">
+          <div class="equity-header">
+            <span class="equity-title">Equity curve — cumulative R</span>
+            <span class="equity-return">+31.96R total</span>
+          </div>
+          <div class="equity-chart-area">
+            <svg width="100%" height="100%" viewBox="0 0 580 148" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Grid lines -->
+              <line x1="0" y1="37" x2="580" y2="37" stroke="rgba(28,24,20,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>
+              <line x1="0" y1="74" x2="580" y2="74" stroke="rgba(28,24,20,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>
+              <line x1="0" y1="111" x2="580" y2="111" stroke="rgba(28,24,20,0.06)" stroke-width="0.5" stroke-dasharray="4,4"/>
+              <!-- Area fill -->
+              <path d="M0,138 L0,130 L24,120 L48,108 L72,116 L96,100 L120,88 L144,96 L168,80 L192,64 L216,72 L240,56 L264,44 L288,52 L312,38 L336,24 L360,32 L384,18 L408,10 L432,20 L456,8 L480,4 L504,14 L528,6 L552,2 L580,8 L580,138 Z" fill="rgba(61,107,74,0.06)"/>
+              <!-- Equity line -->
+              <path d="M0,130 L24,120 L48,108 L72,116 L96,100 L120,88 L144,96 L168,80 L192,64 L216,72 L240,56 L264,44 L288,52 L312,38 L336,24 L360,32 L384,18 L408,10 L432,20 L456,8 L480,4 L504,14 L528,6 L552,2 L580,8" fill="none" stroke="#3D6B4A" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <!-- Data points -->
+              <circle cx="192" cy="64" r="3" fill="#3D6B4A" opacity="0.4"/>
+              <circle cx="336" cy="24" r="3" fill="#3D6B4A" opacity="0.4"/>
+              <circle cx="480" cy="4" r="3" fill="#3D6B4A" opacity="0.4"/>
+              <circle cx="580" cy="8" r="3.5" fill="#3D6B4A"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">Recent trade history</div>
+          <div class="sidebar-card-body" style="padding:0;">
+            <div class="trade-item">
+              <div>
+                <div><span class="trade-pair">XAUUSD</span><span class="trade-dir dir-long" style="margin-left:8px">Long</span></div>
+                <div class="trade-meta"><span class="trade-meta-item">Entry <span>2,318.40</span></span><span class="trade-meta-item">RR <span>1:3</span></span></div>
+              </div>
+              <div class="trade-status status-active">Active</div>
+            </div>
+            <div class="trade-item">
+              <div>
+                <div><span class="trade-pair">EURUSD</span><span class="trade-dir dir-short" style="margin-left:8px">Short</span></div>
+                <div class="trade-meta"><span class="trade-meta-item">Entry <span>1.0920</span></span><span class="trade-meta-item">RR <span>1:2.5</span></span></div>
+              </div>
+              <div class="trade-status status-tp">TP Hit</div>
+            </div>
+            <div class="trade-item">
+              <div>
+                <div><span class="trade-pair">XAUUSD</span><span class="trade-dir dir-short" style="margin-left:8px">Short</span></div>
+                <div class="trade-meta"><span class="trade-meta-item">Entry <span>2,344.10</span></span><span class="trade-meta-item">RR <span>1:2</span></span></div>
+              </div>
+              <div class="trade-status status-tp">TP Hit</div>
+            </div>
+            <div class="trade-item">
+              <div>
+                <div><span class="trade-pair">GBPUSD</span><span class="trade-dir dir-long" style="margin-left:8px">Long</span></div>
+                <div class="trade-meta"><span class="trade-meta-item">Entry <span>1.2694</span></span><span class="trade-meta-item">RR <span>1:3</span></span></div>
+              </div>
+              <div class="trade-status status-sl">SL Hit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TRUST -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Transparency</div>
+    <h2 class="section-h2">The record cannot<br><em>be altered.</em></h2>
+    <p class="section-sub">Not by the trader. Not by us. The architecture of the platform does not permit it.</p>
+
+    <div class="trust-grid fade-in">
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>Fixed at publication</h3>
+        <p>The instant a trade is submitted, all three levels — entry, stop loss, and take profit — are sealed. The database record is write-protected from that point forward.</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M8 5v4l2.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Full history visible</h3>
+        <p>Every trade ever published — wins, losses, active positions — appears on the trader's public profile. Selective disclosure is not possible.</p>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2L10.5 5.5H13.5L11 8L12 12L8 10L4 12L5 8L2.5 5.5H5.5L8 2Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>Reputation is earned</h3>
+        <p>Metrics are computed automatically from the immutable record. A trader's reputation score reflects only what actually happened — not what was selectively reported.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="cta">
+  <div class="container">
+    <div class="section-label">Join TradeLedger</div>
+    <div class="final-h2">
+      Build the reputation<br>your trading <em>deserves.</em>
+    </div>
+    <p class="final-sub">
+      Track your real performance. Publish only your best setups.<br>
+      Let the record speak without interference.
+    </p>
+    <div class="final-actions">
+      <a href="#" class="btn-gold">Start Tracking Your Trades</a>
+      <a href="#feed" class="btn-outline-light">Browse the Live Feed</a>
+    </div>
+    <p class="final-note">Forex · Gold · Silver · No copy trading · No manipulation</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo">Trade<span>Ledger</span></div>
+      <div class="footer-note">Performance records cannot be edited or deleted</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, 60);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Stagger children of grids
+  document.querySelectorAll('.how-grid, .compare-grid, .metrics-grid, .trust-grid').forEach(grid => {
+    grid.querySelectorAll(':scope > *').forEach((child, i) => {
+      child.style.transitionDelay = (i * 80) + 'ms';
+    });
+  });
+</script>
+</body>
+</html>
